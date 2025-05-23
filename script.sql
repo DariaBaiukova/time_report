@@ -172,7 +172,7 @@ when T1.extracurricular_work = 0 and T1.approval in (1,3,5) then isnull(time_of_
 then ROUND(CAST(isnull(T1.time_of_work,0) as numeric)/3600000,2) + isnull(extracurricular_activities_hours,0)
      	when T1.extracurricular_work = 1 and T1.approval in (1,3,5) then isnull(extracurricular_activities_hours,0)
       else 0 end as 'Нерабочие ч' 
-, case when T1.task is not null then ROUND(CAST(isnull(T1.travel_time,0) as numeric)/3600000,2) else 0 end as 'В дороге ч'
+,ROUND(CAST(isnull(T1.travel_time,0) as numeric)/3600000,2) as 'В дороге ч'
 , Work_Start as 'Начало переработок'
 , Work_End as 'Окончание переработок'
 , G3.[name] AS 'Рабочая группа'
