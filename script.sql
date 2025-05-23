@@ -118,6 +118,7 @@ left JOIN SimpleOne.dbo.org_unit AS P4                   ON P4.sys_id = Emp.c_gr
 left JOIN SimpleOne.dbo.org_unit AS P5                   ON P5.sys_id = Emp.c_fifth_level_unit 
 where Emp.company = 161839148291664998 and  Emp.c_contact_type = 'internal' and
 cast(isnull(CONVERT(date, Emp_1c.[Дата приема], 104),@dbeg) as date) <= @dend and cast(isnull(CONVERT(date, Emp_1c.[Дата завершения работы], 104),@dend) as date)>= @dbeg
+and Emp_1c.[Состояние] not in ('ОтпускПоБеременностиИРодам','ОтпускПоУходуЗаРебенком','ТрудовойДоговорПриостановлен')
 and c_fio not in ('1С Интеграция ','Service ОВК ')
 and isnull(P1.name,'Не указано') in (@department1) 
 and isnull(P2.name,'Не указано') in (@department2) 
