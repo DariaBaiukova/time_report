@@ -176,7 +176,12 @@ then ROUND(CAST(isnull(T1.time_of_work,0) as numeric)/3600000,2) + isnull(extrac
 , Work_Start as 'Начало переработок'
 , Work_End as 'Окончание переработок'
 , G3.[name] AS 'Рабочая группа'
-, Emp.c_fio as 'Исполнитель'  
+,case 
+when Emp.sys_id = 164492092297345094 then concat(LTRIM(RTRIM(Emp.c_fio)),' ЦФО')
+when Emp.sys_id = 164492057096435865 then concat(LTRIM(RTRIM(Emp.c_fio)),' СФО')
+when Emp.sys_id = 169994673906290133 then concat(LTRIM(RTRIM(Emp.c_fio)),' ПФО')
+when Emp.sys_id = 164493713798822638 then concat(LTRIM(RTRIM(Emp.c_fio)),' ДФО')
+else LTRIM(RTRIM(Emp.c_fio)) end  as 'Исполнитель'  
 , case when C1.[name] is null then C2.[name] 
        else C1.[name] end AS 'Организация'
 , case when A1.activity_name is null then A2.activity_name 
