@@ -251,7 +251,9 @@ then 'Да' else 'Нет' end as [Общий статус согласовани
  when left(isnull(T2.number,T0.number),3) = 'REQ' then concat('https://sd.servionica.ru/record/itsm_request/',T2.sys_id)
  when left(isnull(T2.number,T0.number),3) = 'RQT' then concat('https://sd.servionica.ru/record/itsm_request_task/',T0.sys_id)
  else  NULL end as URL_REQ
-
+ ,case when ((state_approval in ('approval','approval_project_manager','approved_project_manager','re_approval_with_project_manager')
+or state_approval is null) and T1.approval <> 5) 
+then 'Да' else 'Нет' end as [Промежуточный статус согласования]
 FROM #t2 AS Emp 
 left join SimpleOne.dbo.itsm_tchnsrv_time_report AS T1 ON Emp.sys_id = T1.person
 left join SimpleOne.dbo.itsm_request AS T2 ON T2.sys_id = T1.task
@@ -340,7 +342,7 @@ else LTRIM(RTRIM(Emp.c_fio)) end  as 'Исполнитель'
 ,'Да' as [Общий статус согласования]
 ,Null as [Признак выполнения заявки]
 ,NULL as URL_REQ
-
+,'Да' as [Промежуточный статус согласования]
 from #t2 AS Emp
 left join SimpleOne.dbo.employee as Emp_func on Emp.c_func_manager = Emp_func.sys_id
 left join SimpleOne.dbo.employee as Emp_direct on Emp.c_direct_manager = Emp_direct.sys_id
