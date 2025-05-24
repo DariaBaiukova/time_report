@@ -226,12 +226,16 @@ else LTRIM(RTRIM(Emp.c_fio)) end  as 'Исполнитель'
 (T1.task is not null and cast(DATEADD(hh,3,T1.sys_created_at) as date) between @dbeg AND @dend)
 OR (state_approval is not null and cast(DATEADD(hh,3,T1.date_of_work) as date) between @dbeg AND @dend)
 OR (state_approval is null and T1.task is null and isnull(T1.[year],calend.year) = year(@dend) and (calend.[month] + 1) =  month(@dend))
+OR (state_approval is null and T1.task is null and calend.[month] is null 
+    and cast(DATEADD(hh,3,T1.date_of_work) as date) between @dbeg AND @dend)
 )
 then 'Да' else 'Нет' end as [Нужный период]
 
 ,case when (
 (T1.task is not null and cast(DATEADD(hh,3,T1.sys_created_at) as date) between @agobeg AND @agoend)
 OR (state_approval is not null and cast(DATEADD(hh,3,T1.date_of_work) as date) between @agobeg AND @agoend)
+OR (state_approval is null and T1.task is null and calend.[month] is null 
+    and cast(DATEADD(hh,3,T1.date_of_work) as date) between @agobeg AND @agoend)
 	)
 then 'Да' else 'Нет' end as [Трехмесячный период]
 
@@ -280,7 +284,8 @@ left JOIN SimpleOne.dbo.employee as E5                   on P5.unit_head = E5.sy
 WHERE ((T1.task is not null and cast(DATEADD(hh,3,T1.sys_created_at) as date) between @agobeg AND @dend) --Списание в Simple
 OR (state_approval is not null and cast(DATEADD(hh,3,T1.date_of_work) as date) between @agobeg AND @dend) --Списание внешних по новому модулю
 OR (state_approval is null and T1.task is null and isnull(T1.[year],calend.year) = year(@dend) and (calend.[month] + 1) =  month(@dend)) --Списание РП на активность
-) 
+OR (state_approval is null and T1.task is null and calend.[month] is null 
+    and cast(DATEADD(hh,3,T1.date_of_work) as date) between @agobeg AND @dend)) --Списание через Excel
 
 drop table #t1
 drop table #t11
