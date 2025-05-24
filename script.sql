@@ -213,6 +213,8 @@ else LTRIM(RTRIM(Emp.c_fio)) end  as 'Исполнитель'
 	 else state_approval 
 	 end as "Статус согласования"
 ,T1.approval as [Согласование]
+,isnull(inx.[Индекс],1000)              as "Индекс"
+,inx.[Организация клиент]
 ,[Количество дней в отпуске в промежутке]
 ,[Количество рабочих дней промежутке для сотрудника]
 ,[Итоговое количество рабочих дней]
@@ -282,7 +284,7 @@ left JOIN SimpleOne.dbo.org_unit AS P4                   ON P4.sys_id = Emp.c_gr
 left JOIN SimpleOne.dbo.employee as E4                   on P4.unit_head = E4.sys_id
 left JOIN SimpleOne.dbo.org_unit AS P5                   ON P5.sys_id = Emp.c_fifth_level_unit 
 left JOIN SimpleOne.dbo.employee as E5                   on P5.unit_head = E5.sys_id
-
+left join [SimpleOne].[dbo].[index_activity] as inx      on inx.[Активность] = isnull(A1.activity_name,A2.activity_name)
 WHERE ((T1.task is not null and cast(DATEADD(hh,3,T1.sys_created_at) as date) between @agobeg AND @dend) --Списание в Simple
 OR (state_approval is not null and cast(DATEADD(hh,3,T1.date_of_work) as date) between @agobeg AND @dend) --Списание внешних по новому модулю
 OR (state_approval is null and T1.task is null and isnull(T1.[year],calend.year) = year(@dend) and (calend.[month] + 1) =  month(@dend)) --Списание РП на активность
@@ -328,7 +330,8 @@ else LTRIM(RTRIM(Emp.c_fio)) end  as 'Исполнитель'
 ,NULL as URL
 ,'Не требует согласования' as "Статус согласования"
 ,'Не требует согласования' as [Согласование]
-
+,isnull(NULL,1001) as [Индекс]
+,NULL as  [Организация клиент]
 ,[Количество дней в отпуске в промежутке]
 ,[Количество рабочих дней промежутке для сотрудника]
 ,[Итоговое количество рабочих дней]
@@ -372,6 +375,74 @@ OR (state_approval is null and T1.task is null and calend.[month] is null
     and cast(DATEADD(hh,3,T1.date_of_work) as date) between @dbeg AND @dend)) --Списание через Excel, добавлено 15.05
 and person is not null)
 
+UNION
+
+SELECT 'SM' as 'Система', ObjectName as Объект, IdOrder as ID
+, OpenTime as 'Создано', FinishTime as 'Выполнено'
+, DeadlineTime as 'Предельный срок'
+, WorkTime as 'Дата работы'
+, HourAll as 'Трудозатраты ч'
+, case when rtrim(WorkDescription) != 'Время, потраченное на дорогу.' then HourWork else 0 end as 'Рабочие ч'
+, HourWorkOver as 'Не рабочие ч'
+, case when rtrim(WorkDescription) = 'Время, потраченное на дорогу.' then HourWork else 0 end as 'В дороге ч'
+, StartWorkOver as 'Начало переработок', EndWorkOver as 'Окончание переработок'
+, WorkGroup as 'Рабочая группа'
+,case 
+when Emp.sys_id = 164492092297345094 then concat(LTRIM(RTRIM(Emp.c_fio)),' ЦФО')
+when Emp.sys_id = 164492057096435865 then concat(LTRIM(RTRIM(Emp.c_fio)),' СФО')
+when Emp.sys_id = 169994673906290133 then concat(LTRIM(RTRIM(Emp.c_fio)),' ПФО')
+when Emp.sys_id = 164493713798822638 then concat(LTRIM(RTRIM(Emp.c_fio)),' ДФО')
+else LTRIM(RTRIM(Emp.c_fio)) end  as 'Исполнитель'  
+, CustomerCompany as 'Организация'
+, ActiveName as 'Активность'
+, case when BudgetId is not null then BudgetId else '<Отсутствует>' end as 'Бюджет' 
+, WorkDescription as 'Рабочие заметки'
+,iif(Emp.sys_id in (167654296097304207,164492216792074731,164492174593583700,164492085094886196),'Дирекция сервиса децентрализованных систем', P1.[name]) 
+	                                      AS [Подразделение 1-го уровня]
+,iif(Emp.sys_id in (167654296097304207,164492216792074731,164492174593583700,164492085094886196),P1.[name],P2.[name])
+	                                      AS [Подразделение 2-го уровня]
+,iif(Emp.sys_id in (167654296097304207,164492216792074731,164492174593583700,164492085094886196),P2.[name],P3.[name])                        
+	                                      AS [Подразделение 3-го уровня]
+,iif(Emp.sys_id in (167654296097304207,164492216792074731,164492174593583700,164492085094886196),P3.[name],P4.[name])
+	                                      AS [Подразделение 4-го уровня]
+,P5.[name]                                AS [Подразделение 5-го уровня]
+,Null                                     as URL
+,'Не требует согласования'                                    as "Статус согласования"
+,'Не требует согласования' as [Согласование]
+,isnull(inx.[Индекс],1000)                                     as "Индекс"
+,inx.[Организация клиент]
+,[Количество дней в отпуске в промежутке]
+,[Количество рабочих дней промежутке для сотрудника]
+,[Итоговое количество рабочих дней]
+,[Итоговое количество рабочих дней за три месяца]
+,Emp_func.c_fio as "Функциональный руководитель"
+,Emp_direct.c_fio as "Непосредственный руководитель"
+,[Количество ставок]
+,concat('https://sd.servionica.ru/record/employee/',Emp.sys_id)as URL_employee
+,case when cast(WorkTime as date) between @dbeg and @dend then 'Да' else 'Нет' end as [Нужный период]
+,case when cast(WorkTime as date) between @agobeg and @agoend then 'Да' else 'Нет' end as [Трехмесячный период]
+,'Да' as [Общий статус согласования]
+,iif(ABS(datediff(minute,WorkTime,FinishTime)) <= 1, IdOrder,NULL) as [Признак выполнения заявки]
+,NULL as URL_REQ
+,'Да' as [Промежуточный статус согласования]
+FROM HPSMdbRepUnion.dbo.RepWorkTimeAll AS T1 
+LEFT OUTER JOIN HPSMdbRepUnion.dbo.Employees AS Ehpsm  ON Ehpsm.AccountName = T1.ExecutorAccount
+JOIN #t2  AS Emp  ON Emp.email = Ehpsm.email
+left join SimpleOne.dbo.employee as Emp_func on Emp.c_func_manager = Emp_func.sys_id
+left join SimpleOne.dbo.employee as Emp_direct on Emp.c_direct_manager = Emp_direct.sys_id
+left JOIN SimpleOne.dbo.org_unit AS P1                   ON P1.sys_id = Emp.c_department 
+left JOIN SimpleOne.dbo.employee as E1                   on P1.unit_head = E1.sys_id
+left JOIN SimpleOne.dbo.org_unit AS P2                   ON P2.sys_id = Emp.c_management 
+left JOIN SimpleOne.dbo.employee as E2                   on P2.unit_head = E2.sys_id
+left JOIN SimpleOne.dbo.org_unit AS P3                   ON P3.sys_id = Emp.c_branch 
+left JOIN SimpleOne.dbo.employee as E3                   on P3.unit_head = E3.sys_id
+left JOIN SimpleOne.dbo.org_unit AS P4                   ON P4.sys_id = Emp.c_group 
+left JOIN SimpleOne.dbo.employee as E4                   on P4.unit_head = E4.sys_id
+left JOIN SimpleOne.dbo.org_unit AS P5                   ON P5.sys_id = Emp.c_fifth_level_unit 
+left JOIN SimpleOne.dbo.employee as E5                   on P5.unit_head = E5.sys_id
+
+left join [SimpleOne].[dbo].[index_activity] as inx      on inx.[Активность] = T1.ActiveName
+WHERE cast(WorkTime as date) between @agobeg and @dend
 
 drop table #t1
 drop table #t11
